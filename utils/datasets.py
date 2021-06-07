@@ -57,10 +57,13 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, augment=True, multiscale=True, normalized_labels=True):
+    def __init__(self, list_path, diff_path, img_size=416, augment=True, multiscale=True, normalized_labels=True):
         with open(list_path, "r") as file:
             print("a")
             self.img_files = file.readlines()
+        with open(list_path, "r") as file:
+            print("diff_a")
+            self.diff_img_files = file.readlines()
 
         print("b")
         self.label_files = [
@@ -87,10 +90,16 @@ class ListDataset(Dataset):
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
 
+        # concat diff img to img
+        diff_img_path = self.diff_img_files[index % len(self.diff_img_files)].rstrip()
+        diff_img = transforms.ToTensor()(Image.open(img_path).convert('L'))
+
+        img = torch.cat([img, diff_img], axis=0) 
+
         # Handle images with less than three channels
-        if len(img.shape) != 3:
-            img = img.unsqueeze(0)
-            img = img.expand((3, img.shape[1:]))
+        # if len(img.shape) != 3:
+        #     img = img.unsqueeze(0)
+        #     img = img.expand((3, img.shape[1:]))
 
         _, h, w = img.shape
         h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
