@@ -61,7 +61,7 @@ class ListDataset(Dataset):
         with open(list_path, "r") as file:
             print("a")
             self.img_files = file.readlines()
-        with open(list_path, "r") as file:
+        with open(diff_path, "r") as file:
             print("diff_a")
             self.diff_img_files = file.readlines()
 
@@ -92,7 +92,8 @@ class ListDataset(Dataset):
 
         # concat diff img to img
         diff_img_path = self.diff_img_files[index % len(self.diff_img_files)].rstrip()
-        diff_img = transforms.ToTensor()(Image.open(img_path).convert('L'))
+        print("Path check", img_path, diff_img_path)
+        diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
 
         img = torch.cat([img, diff_img], axis=0) 
 

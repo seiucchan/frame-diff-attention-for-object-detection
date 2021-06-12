@@ -77,8 +77,8 @@ if __name__ == "__main__":
     data_config = parse_data_config(opt.data_config)
     train_path = data_config["train"]
     valid_path = data_config["valid"]
-    train_diff_path = data_config["train-diff"]
-    valid_diff_path = data_config["valid-diff"]
+    train_diff_path = data_config["train_diff"]
+    valid_diff_path = data_config["valid_diff"]
     class_names = load_classes(data_config["names"])
 
     # Initiate model
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         else:
             model.load_darknet_weights(opt.pretrained_weights)
     # Get dataloader
-    dataset = ListDataset(train_path, diff_path, augment=True, multiscale=opt.multiscale_training)
+    dataset = ListDataset(train_path, train_diff_path, augment=True, multiscale=opt.multiscale_training)
     dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=opt.batch_size,
@@ -187,6 +187,7 @@ if __name__ == "__main__":
             precision, recall, AP, f1, ap_class = evaluate(
                 model,
                 path=valid_path,
+                diff_path=valid_diff_path,
                 iou_thres=0.5,
                 conf_thres=0.5,
                 nms_thres=0.5,
