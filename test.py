@@ -61,7 +61,6 @@ def evaluate(model, path, diff_path, iou_thres, conf_thres, nms_thres, img_size,
 
     return precision, recall, AP, f1, ap_class
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")

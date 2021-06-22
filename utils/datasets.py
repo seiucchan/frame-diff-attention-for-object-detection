@@ -95,7 +95,8 @@ class ListDataset(Dataset):
         print("Path check", img_path, diff_img_path)
         diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
 
-        img = torch.cat([img, diff_img], axis=0) 
+        # img = torch.cat([img, diff_img], axis=0) 
+        img = img * diff_img + img
 
         # Handle images with less than three channels
         # if len(img.shape) != 3:
