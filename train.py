@@ -85,7 +85,6 @@ if __name__ == "__main__":
     # Initiate model
     model = Darknet(opt.model_def)
     model = model.to(device)
-    print(model)
     model.apply(weights_init_normal)
 
     # If specified we start from checkpoint
@@ -253,50 +252,56 @@ if __name__ == "__main__":
             model.eval()
             cv2_img = cv2.imread("data/obj/20191201F-netvsYSCC_00049.jpg")
             cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+            img = Image.open("data/obj/20191201F-netvsYSCC_00049.jpg")
             demo_img = transforms.ToTensor()(Image.open("data/obj/20191201F-netvsYSCC_00049.jpg").convert('RGB'))
             demo_diff = transforms.ToTensor()(Image.open("data/difference/20191201F-netvsYSCC/20191201F-netvsYSCC_00049.jpg").convert('L'))
-            demo_img = torch.cat([demo_img, demo_diff], axis=0) 
-            demo_img = demo_img.to(device)
+            # demo_img = Image.open("data/obj/20191201F-netvsYSCC_00049.jpg").convert('RGB')
+            # demo_diff = Image.open("data/difference/20191201F-netvsYSCC/20191201F-netvsYSCC_00049.jpg").convert('L')
+            # demo_img = torch.cat([demo_img, demo_diff], axis=0) 
+            demo_img = demo_img * demo_diff + demo_img
+            # demo_img = demo_img.to(device)
             shape = np.array(cv2_img)
             shape = shape.shape[:2]
-            # detections = detect_image(demo_img, opt.img_size, model, device, conf_thres=0.5, nms_thres=0.5)
+            detections = detect_image(img, demo_img, opt.img_size, model, device, conf_thres=0.5, nms_thres=0.5)
             # detections = model(demo_img)
             # detections = non_max_suppression(detections, conf_thres, nms_thres)
             # detections = detections[0]
-            # if detections is not None:
-            #     # Rescale boxes to original image
-            #     detections = rescale_boxes(detections, opt.img_size, shape)
-            #     unique_labels = detections[:, -1].cpu().unique()
-            #     n_cls_preds = len(unique_labels)
-            #     # Bounding-box colors
-            #     cmap = plt.get_cmap("tab20b")
-            #     colors = [cmap(i) for i in np.linspace(0, 1, 20)]
-            #     bbox_colors = random.sample(colors, n_cls_preds)
-            #     for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
-            #         classes = ["person", "ball"]
-            #         # print("\t+ Label: %s, Conf: %.5f" % (classes[int(cls_pred)], cls_conf.item()))
+            if detections is not None:
+                # Rescale boxes to original image
+                detections = rescale_boxes(detections, opt.img_size, shape)
+                unique_labels = detections[:, -1].cpu().unique()
+                n_cls_preds = len(unique_labels)
+                # Bounding-box colors
+                cmap = plt.get_cmap("tab20b")
+                colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+                bbox_colors = random.sample(colors, n_cls_preds)
+                for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
+                    print(x1, y1, x2, y2, conf, cls_conf, cls_pred)
+                    classes = ["person", "ball"]
+                    # print("\t+ Label: %s, Conf: %.5f" % (classes[int(cls_pred)], cls_conf.item()))
 
-            #         box_w = x2 - x1
-            #         box_h = y2 - y1
+                    box_w = x2 - x1
+                    box_h = y2 - y1
 
-            #         color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
-            #         # Create a Rectangle patch
-            #         # bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
-            #         # Draw bbox
-            #         # print(x1, y1, x1+box_w,  y1+box_h)
-            #         cv2.rectangle(cv2_img, (int(x1), int(y1)), (int(x1+box_w), int(y1+box_h)), color, 4)
-            #         # Add the bbox to the plot
-            #         # ax.add_patch(bbox)
-            #         # Add label
-            #         cv2.putText(cv2_img, classes[int(cls_pred)], (int(x1), int(y1)), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            #         # plt.text(
-            #         #     x1,
-            #         #     y1,
-            #         #     s=classes[int(cls_pred)],
-            #         #     color="white",
-            #         #     verticalalignment="top",
-            #         #     bbox={"color": color, "pad": 0},
+                    color = bbox_colors[int(np.where(unique_labels == int(cls_pred))[0])]
+                    # Create a Rectangle patch
+                    # bbox = patches.Rectangle((x1, y1), box_w, box_h, linewidth=2, edgecolor=color, facecolor="none")
+                    # Draw bbox
+                    # print(x1, y1, x1+box_w,  y1+box_h)
+                    cv2.rectangle(cv2_img, (int(x1), int(y1)), (int(x1+box_w), int(y1+box_h)), color, 4)
+                    # Add the bbox to the plot
+                    # ax.add_patch(bbox)
+                    # Add label
+                    print(cls_pred)
+                    cv2.putText(cv2_img, classes[int(cls_pred)], (int(x1), int(y1)), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                    # plt.text(
+                    #     x1,
+                    #     y1,
+                    #     s=classes[int(cls_pred)],
+                    #     color="white",
+                    #     verticalalignment="top",
+                    #     bbox={"color": color, "pad": 0},
                     # )
 
             
-            # experiment.log_image(cv2_img, name="test_img_{}".format(epoch))
+            experiment.log_image(demo_img, name="test_img_{}".format(epoch))
