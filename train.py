@@ -144,7 +144,6 @@ if __name__ == "__main__":
 
             log_str = "\n---- [Epoch %d/%d, Batch %d/%d] ----\n" % (epoch, opt.epochs, batch_i, len(dataloader))
 
-            #metric_table = [["Metrics", *[f"YOLO Layer {i}" for i in range(len(model.yolo_layers))]]]
 
             # Log metrics at each YOLO layer
             for i, metric in enumerate(metrics):
@@ -152,33 +151,14 @@ if __name__ == "__main__":
                 formats["grid_size"] = "%2d"
                 formats["cls_acc"] = "%.2f%%"
                 row_metrics = [formats[metric] % yolo.metrics.get(metric, 0) for yolo in model.yolo_layers]
-                #metric_table += [[metric, *row_metrics]]
 
-                # Tensorboard logging
-                tensorboard_log = {} 
-                for j, yolo in enumerate(model.yolo_layers):
-                    for name, metric in yolo.metrics.items():
-                        if name != "grid_size":
-                            continue
-                            # tensorboard_log += [{f"{name}_{j+1}": metric}]
-                            # このしたが一応PyTorch
-                            # tensorboard_log[f"{name}_{j+1}"] = metric
-                # tensorboard_log +=] [{"loss": loss.item()}]
-                # このしたが一応PyTorch
-                # tensorboard_log["loss"] = loss.item()
-                # print(tensorboard_log)
-                # experiment.log_metrics(tensorboard_log, step=batches_done)
-            #    logger.list_of_scalars_summary(tensorboard_log, batches_done)
-
-            #log_str += AsciiTable(metric_table).table
+               
             log_str += f"\nTotal loss {loss.item()}"
 
             # Determine approximate time left for epoch
             epoch_batches_left = len(dataloader) - (batch_i + 1)
             time_left = datetime.timedelta(seconds=epoch_batches_left * (time.time() - start_time) / (batch_i + 1))
             log_str += f"\n---- ETA {time_left}"
-
-            # print(log_str)
 
             model.seen += imgs.size(0)
         if epoch % opt.evaluation_interval == 0:
@@ -194,49 +174,23 @@ if __name__ == "__main__":
                 img_size=opt.img_size,
                 batch_size=8,
             )
-            evaluation_metrics = [
-                ("val_precision", precision.mean()),
-                ("val_recall", recall.mean()),
-                ("val_mAP", AP.mean()),
-                ("val_f1", f1.mean()),
-            ]
-            # precision[i]みたいな感じで試す(名前を追加する)
+           
            # person and ball metrics
             metrics = {
+                'val_presision': precision.mean(),
                 'val_precision_person': precision[0].mean(),
                 'val_precision_ball': precision[1].mean(),
+                'val_recall_ball': recall.mean(),
                 'val_recall_person': recall[0].mean(),
                 'val_recall_ball': recall[1].mean(),
                 'val_mAP': AP.mean(),
                 'val_AP_person': AP[0].mean(),
-                    'val_AP_ball': AP[1].mean(),
-                    'val_f1': f1.mean()
+                'val_AP_ball': AP[1].mean(),
+                'val_f1': f1.mean()
             }
-            # anly-ball metrics
-            # metrics = {
-            #         'val_mAP': AP.mean(),
-            #         'val_recall': recall.mean(),
-            #         'val_precision': precision.mean(),
-            #         'val_f1': f1.mean()
-            #         }
-            experiment.log_metrics(metrics, step=epoch)
-           # logger.list_of_scalars_summary(evaluation_metrics, epoch)
-            # Print class APs and mAP
-            ap_table = [["Index", "Class name", "AP"]]
-            metrics = {}
-            #for i, c in enumerate(ap_class):
-                # metrics["pricision"+str(class_names[c])] = precision[i]
-                # metrics["recall"+str(class_names[c])] = recall[i]
-                # metrics["AP"+str(class_names[c])] = AP[i]
-                # 検討事項として、、、
-                # そもそもこのやり方でいいのか
-                # AP(precision, recall).meanでいけてるということはそれぞれにもできるのでは
-                # とりあえず試してみてエラー見てやっていく
             
-
-                #ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
-            #print(AsciiTable(ap_table).table)
-            # print(f"---- mAP {AP.mean()}")
+            experiment.log_metrics(metrics, step=epoch)
+            
 
         if epoch % opt.checkpoint_interval == 0:
             torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
