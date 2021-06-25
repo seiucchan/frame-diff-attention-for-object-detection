@@ -96,7 +96,7 @@ class ListDataset(Dataset):
         diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
 
         # img = torch.cat([img, diff_img], axis=0) 
-        img = img * diff_img + img
+        img = img * diff_img * 2 + img
 
         # Handle images with less than three channels
         # if len(img.shape) != 3:
