@@ -48,6 +48,7 @@ if __name__ == "__main__":
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
     parser.add_argument("--compute_map", default=False, help="if True computes mAP every tenth batch")
     parser.add_argument("--multiscale_training", default=True, help="allow for multi-scale training")
+    parser.add_argument("--diff_mode", default=0)
     opt = parser.parse_args()
     # print(opt)
 
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     'checkpoint_interval': opt.checkpoint_interval,
     'evaluation_interval': opt.evaluation_interval,
     'compute_map': opt.compute_map,
-    'multiscale_training': opt.multiscale_training
+    'multiscale_training': opt.multiscale_training,
+    'diff_mode': opt.diff_mode
     }
     experiment.log_parameters(hyper_params)
 
@@ -78,9 +80,14 @@ if __name__ == "__main__":
     data_config = parse_data_config(opt.data_config)
     train_path = data_config["train"]
     valid_path = data_config["valid"]
-    train_diff_path = data_config["train_diff"]
-    valid_diff_path = data_config["valid_diff"]
     class_names = load_classes(data_config["names"])
+    diff_mode = opt.diff_mode
+    if diff_mode != 0:
+        train_diff_path = data_config["train_diff"]
+        valid_diff_path = data_config["valid_diff"]
+    else:
+        train_diff_path = ""
+        valid_diff_path = ""
 
     # Initiate model
     model = Darknet(opt.model_def)
@@ -94,7 +101,7 @@ if __name__ == "__main__":
         else:
             model.load_darknet_weights(opt.pretrained_weights)
     # Get dataloader
-    dataset = ListDataset(train_path, train_diff_path, augment=True, multiscale=opt.multiscale_training)
+    dataset = ListDataset(train_path, train_diff_path, diff_mode, augment=True, multiscale=opt.multiscale_training)
     dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=opt.batch_size,
@@ -168,6 +175,7 @@ if __name__ == "__main__":
                 model,
                 path=valid_path,
                 diff_path=valid_diff_path,
+                diff_mode=diff_mode,
                 iou_thres=0.5,
                 conf_thres=0.5,
                 nms_thres=0.5,
