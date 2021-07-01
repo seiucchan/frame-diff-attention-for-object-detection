@@ -94,12 +94,15 @@ class ListDataset(Dataset):
             diff_img_path = self.diff_img_files[index % len(self.diff_img_files)].rstrip()
             print("Path check", img_path, diff_img_path)
             diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
+        print(img.dtype, diff_img.dtype)
+            
         # concat diff img to img
         if diff_mode == 1:
             img = torch.cat([img, diff_img], axis=0) 
+            print(img.shape)
         # mode2 (calculate to use diff)
         if diff_mode == 2:
-            img = img * diff_img * 2 + img
+            img = img * diff_img * 2 + img 
 
         # Handle images with less than three channels
         # if len(img.shape) != 3:

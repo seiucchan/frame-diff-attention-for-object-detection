@@ -24,6 +24,7 @@ from torchvision import datasets
 from torchvision import transforms
 from torch.autograd import Variable
 import torch.optim as optim
+from torchsummary import summary
 
 import cv2
 from PIL import Image
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
     parser.add_argument("--compute_map", default=False, help="if True computes mAP every tenth batch")
     parser.add_argument("--multiscale_training", default=True, help="allow for multi-scale training")
-    parser.add_argument("--diff_mode", default=0)
+    parser.add_argument("--diff_mode", type=int ,default=0)
     opt = parser.parse_args()
     # print(opt)
 
@@ -83,6 +84,7 @@ if __name__ == "__main__":
     class_names = load_classes(data_config["names"])
     diff_mode = opt.diff_mode
     if diff_mode != 0:
+        print("Use diff")
         train_diff_path = data_config["train_diff"]
         valid_diff_path = data_config["valid_diff"]
     else:
@@ -91,8 +93,10 @@ if __name__ == "__main__":
 
     # Initiate model
     model = Darknet(opt.model_def)
-    model = model.to(device)
+    # model = model.to(device)
+    # print(model.state_dict()['module_list.0.conv_0.weight'])
     model.apply(weights_init_normal)
+   
 
     # If specified we start from checkpoint
     if opt.pretrained_weights:
@@ -100,6 +104,17 @@ if __name__ == "__main__":
             model.load_state_dict(torch.load(opt.pretrained_weights))
         else:
             model.load_darknet_weights(opt.pretrained_weights)
+    
+    model.module_list[0][0] = nn.Conv2d(4, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    model.state_dict()['module_list.0.conv_0.weight'] = torch.nn.init.xavier_uniform(model.module_list[0][0].weight)
+    for i, param in enumerate(model.parameters()):
+        if i == 0:
+            param.requires_grad = True
+        else:
+            param.requires_grad = False
+    model = model.to(device)
+    # print(model.module_list[1][0].bias)
+    # exit()
     # Get dataloader
     dataset = ListDataset(train_path, train_diff_path, diff_mode, augment=True, multiscale=opt.multiscale_training)
     dataloader = torch.utils.data.DataLoader(
@@ -110,9 +125,9 @@ if __name__ == "__main__":
         pin_memory=True,
         collate_fn=dataset.collate_fn,
     )
-
+    # exit()
     optimizer = torch.optim.Adam(model.parameters())
-
+        
     metrics = [
         "grid_size",
         "loss",
@@ -130,6 +145,11 @@ if __name__ == "__main__":
         "conf_noobj",
     ]
     for epoch in range(opt.epochs):
+        if epoch == 10:
+           for i, param in enumerate(model.parameters()):
+                print(param)
+                param.requires_grad = True
+                optimizer = torch.optim.Adam(model.parameters())
         model.train()
         start_time = time.time()
         for batch_i, (_, imgs, targets) in enumerate(dataloader):
