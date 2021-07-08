@@ -104,17 +104,15 @@ if __name__ == "__main__":
             model.load_state_dict(torch.load(opt.pretrained_weights))
         else:
             model.load_darknet_weights(opt.pretrained_weights)
-    
-    model.module_list[0][0] = nn.Conv2d(4, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-    model.state_dict()['module_list.0.conv_0.weight'] = torch.nn.init.xavier_uniform(model.module_list[0][0].weight)
-    for i, param in enumerate(model.parameters()):
-        if i == 0:
-            param.requires_grad = True
-        else:
-            param.requires_grad = False
+    if diff_mode == 1:
+        model.module_list[0][0] = nn.Conv2d(4, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        model.state_dict()['module_list.0.conv_0.weight'] = torch.nn.init.xavier_uniform(model.module_list[0][0].weight)
+        for i, param in enumerate(model.parameters()):
+            if i == 0:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
     model = model.to(device)
-    # print(model.module_list[1][0].bias)
-    # exit()
     # Get dataloader
     dataset = ListDataset(train_path, train_diff_path, diff_mode, augment=True, multiscale=opt.multiscale_training)
     dataloader = torch.utils.data.DataLoader(
@@ -125,7 +123,14 @@ if __name__ == "__main__":
         pin_memory=True,
         collate_fn=dataset.collate_fn,
     )
-    # exit()
+
+    # control by optimizer ???
+    # if diff_mode == 1:
+    #     for i, param in enumerate(model.parameters()):
+    #         if i == 1:
+    #             optimizer = torch.optim.Adam(param)
+    # else:
+    #     optimizer = torch.optim.Adam(model.parameters())
     optimizer = torch.optim.Adam(model.parameters())
         
     metrics = [
@@ -146,11 +151,11 @@ if __name__ == "__main__":
     ]
     for epoch in range(opt.epochs):
         if epoch == 10:
-           for i, param in enumerate(model.parameters()):
-                print(param)
-                param.requires_grad = True
-                optimizer = torch.optim.Adam(model.parameters())
-        model.train()
+            if diff_mode == 1:
+                for i, param in enumerate(model.parameters()):
+                    param.requires_grad = True
+                    optimizer = torch.optim.Adam(model.parameters())
+            model.train()
         start_time = time.time()
         for batch_i, (_, imgs, targets) in enumerate(dataloader):
             batches_done = len(dataloader) * epoch + batch_i
@@ -220,12 +225,18 @@ if __name__ == "__main__":
             experiment.log_metrics(metrics, step=epoch)
             
 
-        if epoch % opt.checkpoint_interval == 0:
-            torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
-            print("Save model: ",  f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+        # if epoch % opt.checkpoint_interval == 0:
+        #     torch.save(model.state_dict(), f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
+        #     print("Save model: ",  f"checkpoints/yolov3_ckpt_%d.pth" % epoch)
         
-        if epoch % 10 == 0:
-            model.eval()
+
+
+
+
+
+        # plot image
+        # if epoch % 10 == 0:
+        #     model.eval()
             # cv2_img = cv2.imread("data/obj/20191201F-netvsYSCC_00049.jpg")
             # cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
             # img = Image.open("data/obj/20191201F-netvsYSCC_00049.jpg")
