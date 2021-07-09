@@ -150,7 +150,7 @@ if __name__ == "__main__":
         "conf_noobj",
     ]
     for epoch in range(opt.epochs):
-        if epoch == 10:
+        if epoch == 100:
             if diff_mode == 1:
                 for i, param in enumerate(model.parameters()):
                     param.requires_grad = True
@@ -213,7 +213,7 @@ if __name__ == "__main__":
                 'val_presision': precision.mean(),
                 'val_precision_person': precision[0].mean(),
                 'val_precision_ball': precision[1].mean(),
-                'val_recall_ball': recall.mean(),
+                'val_recall': recall.mean(),
                 'val_recall_person': recall[0].mean(),
                 'val_recall_ball': recall[1].mean(),
                 'val_mAP': AP.mean(),
