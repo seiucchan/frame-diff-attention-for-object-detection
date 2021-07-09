@@ -38,6 +38,7 @@ experiment = Experiment(api_key=MY_API_KEY, project_name='futsal-analyzer')
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
+    parser.add_argument("--reset_epoch", default=100, help="when optimizer is reset")
     parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")
     parser.add_argument("--gradient_accumulations", type=int, default=2, help="number of gradient accums before step")
     parser.add_argument("--model_def", type=str, default="config/yolov3.cfg", help="path to model definition file")
@@ -57,6 +58,7 @@ if __name__ == "__main__":
     hyper_params = {
     'batch_size': opt.batch_size,
     'epoch': opt.epochs,
+    'reset_epoch': opt.reset_epoch,
     'gradient_accumulations': opt.gradient_accumulations,
     'model_def': opt.model_def,
     'data_config': opt.data_config,
@@ -150,7 +152,7 @@ if __name__ == "__main__":
         "conf_noobj",
     ]
     for epoch in range(opt.epochs):
-        if epoch == 100:
+        if epoch == opt.reset_epoch:
             if diff_mode == 1:
                 for i, param in enumerate(model.parameters()):
                     param.requires_grad = True
