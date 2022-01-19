@@ -41,7 +41,7 @@ experiment = Experiment(api_key=MY_API_KEY, project_name='futsal-analyzer')
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
-    parser.add_argument("--reset_epoch", default=100, help="when optimizer is reset")
+    parser.add_argument("--reset_epoch", type=int, default=100, help="when optimizer is reset")
     parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")
     parser.add_argument("--gradient_accumulations", type=int, default=2, help="number of gradient accums before step")
     parser.add_argument("--model_def", type=str, default="config/yolov3.cfg", help="path to model definition file")
@@ -160,7 +160,7 @@ if __name__ == "__main__":
                 for i, param in enumerate(model.parameters()):
                     param.requires_grad = True
                     optimizer = torch.optim.Adam(model.parameters())
-            model.train()
+        model.train()
         start_time = time.time()
         for batch_i, (_, imgs, targets) in enumerate(dataloader):
             batches_done = len(dataloader) * epoch + batch_i
