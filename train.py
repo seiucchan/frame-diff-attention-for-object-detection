@@ -1,5 +1,14 @@
 from __future__ import division
 
+import os
+import sys
+import time
+import datetime
+import argparse
+
+os.environ["COMET_URL_OVERRIDE"] = "https://www.comet-ml.com/clientlib/"
+os.environ["COMET_WS_URL_OVERRIDE"] = "wss://www.comet-ml.com/ws/logger-ws"
+
 from comet_ml import Experiment
 
 from models import *
@@ -11,12 +20,6 @@ from utils.detect import *
 from test import evaluate
 
 from terminaltables import AsciiTable
-
-import os
-import sys
-import time
-import datetime
-import argparse
 
 import torch
 from torch.utils.data import DataLoader
