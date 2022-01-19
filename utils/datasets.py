@@ -57,19 +57,18 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, diff_path, img_size=416, augment=True, multiscale=True, normalized_labels=True):
+    def __init__(self, list_path, diff_path, diff_mode, img_size=416, augment=True, multiscale=True, normalized_labels=True):
         with open(list_path, "r") as file:
-            print("a")
             self.img_files = file.readlines()
-        with open(diff_path, "r") as file:
-            print("diff_a")
-            self.diff_img_files = file.readlines()
+        if diff_mode != 0:
+            with open(diff_path, "r") as file:
+                self.diff_img_files = file.readlines()
 
-        print("b")
         self.label_files = [
             path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
             for path in self.img_files
         ]
+        self.diff_mode = diff_mode
         self.img_size = img_size
         self.max_objects = 100
         self.augment = augment
@@ -89,14 +88,21 @@ class ListDataset(Dataset):
 
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
-
+        
+        diff_mode = self.diff_mode
+        if diff_mode != 0:
+            diff_img_path = self.diff_img_files[index % len(self.diff_img_files)].rstrip()
+            print("Path check", img_path, diff_img_path)
+            diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
+        print(img.dtype, diff_img.dtype)
+            
         # concat diff img to img
-        diff_img_path = self.diff_img_files[index % len(self.diff_img_files)].rstrip()
-        print("Path check", img_path, diff_img_path)
-        diff_img = transforms.ToTensor()(Image.open(diff_img_path).convert('L'))
-
-        # img = torch.cat([img, diff_img], axis=0) 
-        img = img * diff_img + img
+        if diff_mode == 1:
+            img = torch.cat([img, diff_img], axis=0) 
+            print(img.shape)
+        # mode2 (calculate to use diff)
+        if diff_mode == 2:
+            img = img * diff_img * 2 + img 
 
         # Handle images with less than three channels
         # if len(img.shape) != 3:

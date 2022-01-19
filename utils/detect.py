@@ -1,11 +1,13 @@
 from utils.utils import non_max_suppression
 
+import numpy as np
+from PIL import Image
 import torch
 from torchvision import transforms
 from torch.autograd import Variable
 
 
-def detect_image(img, img_size, model, device, conf_thres, nms_thres):
+def detect_image(img, demo_img, img_size, model, device, conf_thres, nms_thres):
     # scale and pad image
     ratio = min(img_size/img.size[0], img_size/img.size[1])
     imw = round(img.size[0] * ratio)
@@ -22,7 +24,8 @@ def detect_image(img, img_size, model, device, conf_thres, nms_thres):
          transforms.ToTensor(),
      ])
     # convert image to Tensor
-    inp = img_transforms(img).float().unsqueeze_(0)
+    demo_img = transforms.functional.to_pil_image(demo_img)
+    inp = img_transforms(demo_img).float().unsqueeze_(0)
     inp = inp.to(device)
     # run inference on the model and get detections
     with torch.no_grad():
